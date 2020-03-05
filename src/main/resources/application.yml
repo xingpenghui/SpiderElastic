@@ -10,3 +10,8 @@ spring:
     show-sql: true
     hibernate:
       dialect: org.hibernate.dialect.MySQL57Dialect #数据库的方言
+
+  data:
+    elasticsearch:
+      cluster-name: qfjava
+      cluster-nodes: 39.105.189.141:9300

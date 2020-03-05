@@ -25,16 +25,19 @@ public class QcJob {
     private Date utime;
     private String jobdetailurl;
     private Date ctime;
+    private Integer jid;
 
     public QcJob() {
     }
 
-    public QcJob(String jobname, String comname, String workaddr, String salaryrang, String utime, String jobdetailurl) {
+    public QcJob(String jobname,int jid, String comname, String workaddr, String salaryrang, String utime, String jobdetailurl) {
         this.jobname = jobname;
+        this.jid=jid;
         this.comname = comname;
         this.workaddr = workaddr;
         this.salaryrang = salaryrang;
         this.utime = DateUtil.parseDate(utime);
         this.jobdetailurl = jobdetailurl;
+        this.ctime=new Date();
     }
 }

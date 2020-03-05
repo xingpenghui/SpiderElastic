@@ -27,7 +27,9 @@ public class JobPage implements PageProcessor {
             List<QcJob> jobs=new ArrayList<>();
             list.remove(0);
             for(Selectable s:list){
+                s.links().get();
                 jobs.add(new QcJob(s.css("p.t1 span a","title").get(),
+                        Integer.parseInt(s.css("p.t1 input.checkbox","value").get()),
                         s.css("span.t2 a","text").get(),
                         s.css("span.t3","text").get(),
                         s.css("span.t4","text").get(),
