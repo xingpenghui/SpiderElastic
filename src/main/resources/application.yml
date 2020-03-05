@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://39.105.189.141:3307/db_data?serverTimezone=Asia/Shanghai
+    username: root
+    password: qfjava
+    type: com.alibaba.druid.pool.DruidDataSource
+  jpa:
+    database: mysql
+    show-sql: true
+    hibernate:
+      dialect: org.hibernate.dialect.MySQL57Dialect #数据库的方言
