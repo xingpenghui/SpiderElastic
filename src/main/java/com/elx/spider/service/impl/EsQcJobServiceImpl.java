@@ -16,11 +16,13 @@ import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.ResultsExtractor;
 import org.springframework.data.elasticsearch.core.SearchResultMapper;
 import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
+import org.springframework.data.elasticsearch.core.aggregation.impl.AggregatedPageImpl;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
@@ -61,36 +63,50 @@ public class EsQcJobServiceImpl implements EsQcJobService {
     public R queryMoneyRange(int min, int max) {
         BoolQueryBuilder boolQueryBuilder=QueryBuilders.boolQuery();
         boolQueryBuilder.should(QueryBuilders.rangeQuery("minmoney").gte(min)).
-                should(QueryBuilders.rangeQuery("maxmoney").lte(max));
+                must(QueryBuilders.rangeQuery("maxmoney").lte(max));
         return R.ok(jobDao.search(boolQueryBuilder));
     }
 
     //重构 Spring Data ES 的查询 获取高亮标记
     @Override
-    public R queryHight(String job) {
+    public R queryHight(String job,int p,int size) {
+        //设置页码
+        Pageable pageable= PageRequest.of(p-1,size);
+        //原生查询
         NativeSearchQuery query=new NativeSearchQueryBuilder()
-                .withQuery(QueryBuilders.wildcardQuery("jname",job))
-                .withHighlightFields(new HighlightBuilder.Field("jname")).build();
-        Page<EsQcJob> page=template.queryForPage(query, EsQcJob.class, new SearchResultMapper() {
+                .withQuery(QueryBuilders.matchQuery("jname",job))
+                .withHighlightFields(new HighlightBuilder.Field("jname")
+                        .preTags("<span style='color:red;font-size:30px'>").//设置高亮的标记 起始标签 默认<em>
+                                postTags("</span>")// 设置高亮标记 结束标签
+                       ).build();
+        //设置分页
+        query.setPageable(pageable);
+        //自定义查询处理
+        Page<EsQcJob> page=template.queryForPage(query, EsQcJob.class,
+                new SearchResultMapper() {
             @Override
             public <T> AggregatedPage<T> mapResults(SearchResponse searchResponse, Class<T> aClass, Pageable pageable) {
                 //自己解析结果
+                //记录最终的查询结果
                 List<EsQcJob> list=new ArrayList<>();
+                //获取查询结果
                 SearchHits hits=searchResponse.getHits();
+                //校验是否查询到内容
                 if(hits!=null && hits.totalHits>0){
                     //遍历每一行数据
                     for(SearchHit sh:hits) {
                         //获取高亮信息
+                        System.out.println("高亮标记："+sh.getHighlightFields());
+                        //获取具体字段的高亮标记
                         String hs=sh.getHighlightFields().get("jname").fragments()[0].toString();
-                        System.out.println(hs);
-                        //为属性赋值
-                        EsQcJob esJobb = JSON.parseObject(sh.getSourceAsString(),EsQcJob.class);
+                        //解析结果
+                        EsQcJob esJobb=JSON.parseObject(sh.getSourceAsString(),EsQcJob.class);
+                        //重置属性
                         esJobb.setJname(hs);
                         list.add(esJobb);
                     }
-                    return (AggregatedPage<T>) new PageImpl<EsQcJob>(list);
                 }
-                return null;
+                return new AggregatedPageImpl(list);
             }
 
             @Override

@@ -17,6 +17,6 @@ public interface EsQcJobService {
     R queryMoneyRange(int min,int max);
 
     //高亮显示查询
-    R queryHight(String job);
+    R queryHight(String job,int page,int size);
 
 }
